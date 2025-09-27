@@ -15,8 +15,8 @@ namespace ZenithFanUtility
         public Form3(Form owner)
         {
             InitializeComponent();
-            ApplyCurrentMode();
-            this.Owner = owner; // Set the owner
+            ApplyDarkMode();
+            this.Owner = owner;
         }
         [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
@@ -37,7 +37,7 @@ namespace ZenithFanUtility
                 }
                 catch
                 {
-                    // Fails on unsupported OS versions
+                    // fails on unsupported OS versions
                 }
             }
             return false;
@@ -53,8 +53,8 @@ namespace ZenithFanUtility
             var foregroundColor = Color.White;
             var controlBackgroundColor = Color.FromArgb(30, 30, 30);
             var trackBarBackgroundColor = Color.FromArgb(30, 30, 30);
-            var outlineColor = Color.DarkGray; // Set the outline color to dark grey
-            var linkLabelColor = Color.LightBlue; // Set link label color to light blue
+            var outlineColor = Color.DarkGray;
+            var linkLabelColor = Color.LightBlue;
 
             this.BackColor = backgroundColor;
             this.ForeColor = foregroundColor;
@@ -89,94 +89,26 @@ namespace ZenithFanUtility
             }
         }
 
-        public void ApplyLightMode()
-        {
-            // Define light mode colors
-            var backgroundColor = System.Drawing.Color.White;
-            var foregroundColor = System.Drawing.Color.Black;
-            var controlBackgroundColor = System.Drawing.Color.White;
-            var trackBarBackgroundColor = System.Drawing.Color.White;
-            var menuStripBackgroundColor = System.Drawing.Color.LightGray;
-            var menuStripForegroundColor = System.Drawing.Color.Black;
-
-            // Apply colors to the form
-            this.BackColor = backgroundColor;
-            this.ForeColor = foregroundColor;
-
-            // Apply colors to controls
-            foreach (Control control in this.Controls)
-            {
-                if (control is Label || control is Button || control is CheckBox || control is TextBox)
-                {
-                    control.BackColor = controlBackgroundColor;
-                    control.ForeColor = foregroundColor;
-                }
-                else if (control is TrackBar)
-                {
-                    control.BackColor = trackBarBackgroundColor;
-                }
-                else if (control is LinkLabel linkLabel)
-                {
-                    linkLabel.LinkColor = foregroundColor;
-                    linkLabel.ActiveLinkColor = foregroundColor;
-                    linkLabel.VisitedLinkColor = foregroundColor;
-                    linkLabel.BackColor = controlBackgroundColor;
-                    linkLabel.ForeColor = foregroundColor;
-                }
-            }
-
-            // Apply colors to the menu strip if it exists
-            if (this.MainMenuStrip != null)
-            {
-                this.MainMenuStrip.BackColor = menuStripBackgroundColor;
-                this.MainMenuStrip.ForeColor = menuStripForegroundColor;
-            }
-        }
-
-        private void ApplyCurrentMode()
-        {
-            // Logic to determine and apply the current mode (dark or light)
-            // For example, you can check a setting or a user preference
-            bool isDarkMode = true; // This should be replaced with actual logic
-
-            if (isDarkMode)
-            {
-                ApplyDarkMode();
-            }
-            else
-            {
-                ApplyLightMode();
-            }
-        }
-
         private void Form3_Load(object sender, EventArgs e)
         {
             // Apply the dark theme to the title bar first
             SetDarkModeTitleBar(this.Handle);
 
-            // --- START: Self-Positioning Logic ---
+            // self positioning logic
             if (this.Owner != null)
             {
-                // Set the start position to Manual to override any defaults
                 this.StartPosition = FormStartPosition.Manual;
-
-                // Define the gap between the forms
                 int gap = 10;
-
-                // Calculate the desired location above the owner (Form1)
                 int newLeft = this.Owner.Left;
                 int newTop = this.Owner.Top - this.Height - gap;
 
-                // Failsafe: If there's no room on top, place it below instead
+                // failsafe, if theres no room on top, place it below instead
                 if (newTop < Screen.FromControl(this).WorkingArea.Top)
                 {
                     newTop = this.Owner.Bottom + gap;
                 }
-
-                // Set our own location
                 this.Location = new Point(newLeft, newTop);
             }
-            // --- END: Self-Positioning Logic ---
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -192,11 +124,6 @@ namespace ZenithFanUtility
         private void linkLabel3_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             System.Diagnostics.Process.Start("https://github.com/pgain88/AsusFanControlRemastered");
-        }
-
-        private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
-        {
-
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)

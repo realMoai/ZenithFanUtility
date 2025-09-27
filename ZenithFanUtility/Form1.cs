@@ -11,7 +11,6 @@ using AsusFanControl;
 namespace ZenithFanUtility
 {
     public partial class Form1 : Form
-
     {
         private static Form1 instance;
 
@@ -29,7 +28,7 @@ namespace ZenithFanUtility
 
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
-        private bool isUpdatingStats = false; // Our new "busy" flag
+        private bool isUpdatingStats = false;
         private ulong lastCpuTempValue = 0;
         private ulong lastGpuTempValue = 0;
         private string lastRpmString = "";
@@ -39,21 +38,19 @@ namespace ZenithFanUtility
 
         private static bool SetDarkModeTitleBar(IntPtr handle)
         {
-            // This works on Windows 11 and later builds of Windows 10
+            // this works on windows 11 and later builds of windows 10
             if (Environment.OSVersion.Version.Major >= 10)
             {
                 try
                 {
                     int enabled = 1;
-                    // For Win11
                     DwmSetWindowAttribute(handle, DWMWA_USE_IMMERSIVE_DARK_MODE, ref enabled, sizeof(int));
-                    // For older Win10
                     DwmSetWindowAttribute(handle, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, ref enabled, sizeof(int));
                     return true;
                 }
                 catch
                 {
-                    // Fails on unsupported OS versions
+                    // fails on unsupported os versions
                 }
             }
             return false;
@@ -76,22 +73,22 @@ namespace ZenithFanUtility
 
         public Form1(string[] args)
         {
-            // Enable double buffering to reduce flicker
+            // enable double buffering to reduce flicker
             this.SetStyle(ControlStyles.DoubleBuffer |
-                          ControlStyles.UserPaint |
-                          ControlStyles.AllPaintingInWmPaint,
-                          true);
+                            ControlStyles.UserPaint |
+                            ControlStyles.AllPaintingInWmPaint,
+                            true);
             this.UpdateStyles();
 
             InitializeComponent();
             menuStrip1.Renderer = new DarkMenuRenderer();
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
 
-            // Create the tray icon here so it's never null, but keep it hidden.
+            // create the tray icon here so it's never null, but keep it hidden
             trayIcon = new NotifyIcon()
             {
                 Icon = Icon,
-                Visible = false, // Start hidden
+                Visible = false,
                 ContextMenu = new ContextMenu(new MenuItem[] {
         new MenuItem("Show", (s1, e1) =>
         {
@@ -107,10 +104,9 @@ namespace ZenithFanUtility
             };
             trayIcon.MouseClick += (s, e) =>
             {
-                // We only care about the left-click
                 if (e.Button == MouseButtons.Left)
                 {
-                    // Toggle the form's visibility
+                    // toggle the form's visibility
                     if (this.Visible)
                     {
                         this.Hide();
@@ -118,7 +114,7 @@ namespace ZenithFanUtility
                     else
                     {
                         this.Show();
-                        this.Activate(); // IMPORTANT: This brings the form to the front
+                        this.Activate(); // important: this brings the form to the front
                     }
                 }
             };
@@ -129,16 +125,14 @@ namespace ZenithFanUtility
             toolStripMenuItemAutoRefreshStats.Checked = Properties.Settings.Default.autoRefreshStats;
             trackBarFanSpeed.Value = Properties.Settings.Default.fanSpeed;
 
-            // Set the minimum and maximum before assigning the value
-            numericUpDown1.Minimum = 1000; // FIXED: Changed from 2000 to 1000
+            numericUpDown1.Minimum = 1000;
             numericUpDown1.Maximum = 60000;
 
-            // Initialize the timer but DO NOT subscribe or start it here.
+            // initialize the timer but do not subscribe or start it here
             timer = new Timer();
 
             Properties.Settings.Default.Reload();
 
-            // Ensure the saved value is within the defined range
             if (Properties.Settings.Default.TimerRefreshRate < numericUpDown1.Minimum ||
                 Properties.Settings.Default.TimerRefreshRate > numericUpDown1.Maximum)
             {
@@ -151,19 +145,15 @@ namespace ZenithFanUtility
                 numericUpDown1.Value = Properties.Settings.Default.TimerRefreshRate;
             }
 
-            // Subscribe to ValueChanged event to save settings
             numericUpDown1.ValueChanged += numericUpDown1_ValueChanged;
 
             LoadSettings();
         }
 
-        // Change the Timer_Tick method signature to match the EventHandler delegate
-
-
         protected override void SetVisibleCore(bool value)
         {
-            // This is the definitive fix for the title bar flashing.
-            // We apply the dark theme BEFORE the form is made visible for the first time.
+            // this is the definitive fix for the title bar flashing
+            // we apply the dark theme before the form is made visible for the first time
             if (!this.IsHandleCreated)
             {
                 this.CreateHandle();
@@ -186,23 +176,23 @@ namespace ZenithFanUtility
                 components?.Dispose();
                 timer?.Dispose();
                 trayIcon?.Dispose();
-                AppDomain.CurrentDomain.ProcessExit -= OnProcessExit; // Unsubscribe ProcessExit
+                AppDomain.CurrentDomain.ProcessExit -= OnProcessExit; // unsubscribe processexit
                 if (asusControl is IDisposable disposableControl)
                 {
-                    disposableControl.Dispose(); // Dispose AsusControl if IDisposable
+                    disposableControl.Dispose(); // dispose asuscontrol if idisposable
                 }
             }
             base.Dispose(disposing);
         }
-       
+
         private void OnProcessExit(object sender, EventArgs e)
         {
             try
             {
                 if (Properties.Settings.Default.turnOffControlOnExit)
                 {
-                    asusControl.SetFanSpeed(0, 0); // Set speed for the first fan
-                    asusControl.SetFanSpeed(0, 1); // Set speed for the second fan
+                    asusControl.SetFanSpeed(0, 0);
+                    asusControl.SetFanSpeed(0, 1);
                 }
 
                 Properties.Settings.Default.Save();
@@ -218,22 +208,15 @@ namespace ZenithFanUtility
         private void Form1_Load(object sender, EventArgs e)
         {
             trayIcon.Visible = true;
-            // 1. Subscribe our ONE new, correct event handler
             timer.Tick += UpdateStats_Tick;
-
-            // 2. Set the interval from saved settings
             timer.Interval = (int)numericUpDown1.Value;
 
-            // 3. Load UI settings
-            SetDarkModeTitleBar(this.Handle);
-
-            // 4. IMPORTANT: Only start the timer if the setting is already checked
+            // important: only start the timer if the setting is already checked
             if (Properties.Settings.Default.autoRefreshStats)
             {
                 timer.Start();
             }
 
-            // 5. Handle starting minimized
             if (Environment.GetCommandLineArgs().Contains("-tray"))
             {
                 WindowState = FormWindowState.Minimized;
@@ -242,45 +225,38 @@ namespace ZenithFanUtility
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // Check our secret flag.
+            // check our secret flag
             if (isReallyExiting)
             {
-                // If we are really exiting, do nothing and let the app close.
+                // if we are really exiting, do nothing and let the app close
                 return;
             }
             else
             {
-                // If not, it means the user clicked the 'X' button.
-                // So, we cancel the close and hide the form instead.
+                // if not, it means the user clicked the 'x' button
+                // so, we cancel the close and hide the form instead
                 e.Cancel = true;
                 this.Hide();
             }
         }
 
-
         private void PositionFormNextToTray()
         {
-            // Get the primary screen's working area (excludes the taskbar)
             Rectangle workingArea = Screen.PrimaryScreen.WorkingArea;
-
-            // Determine where to place the form
-            int newLeft = workingArea.Right - this.Width; // Default to bottom-right
+            int newLeft = workingArea.Right - this.Width; // default to bottom-right
             int newTop = workingArea.Bottom - this.Height - 50;
 
-            // Check if the taskbar is on top or on the left and adjust accordingly
-            if (workingArea.Top > 0) // Taskbar is at the top
+            if (workingArea.Top > 0) // taskbar is at the top
             {
                 newTop = workingArea.Top;
             }
-            if (workingArea.Left > 0) // Taskbar is on the left
+            if (workingArea.Left > 0) // taskbar is on the left
             {
                 newLeft = workingArea.Left;
             }
 
-            // Set the form's location
             this.Location = new Point(newLeft, newTop);
         }
-        
 
         private void toolStripMenuItemTurnOffControlOnExit_CheckedChanged(object sender, EventArgs e)
         {
@@ -307,7 +283,7 @@ namespace ZenithFanUtility
 
             if (Properties.Settings.Default.autoRefreshStats)
             {
-                // Manually trigger a tick immediately so the user sees a change
+                // manually trigger a tick immediately so the user sees a change
                 UpdateStats_Tick(null, null);
                 timer.Start();
             }
@@ -324,38 +300,35 @@ namespace ZenithFanUtility
 
         private void RadioButton_Mode_CheckedChanged(object sender, EventArgs e)
         {
-            // This method runs whenever ANY of the three radio buttons are checked.
-
-            // We only care about the one that is now 'Checked'.
+            // this method runs whenever any of the three radio buttons are checked
+            // we only care about the one that is now 'checked'
             if (sender is RadioButton checkedButton && checkedButton.Checked)
             {
                 string selectedMode = "";
                 if (checkedButton == manualModeRadioButton)
                 {
-                    // --- MANUAL MODE ---
-                    manualControlGroupBox.Enabled = true; // Enable the slider panel
-                    DeactivateFanCurve(); // Turn off the fan curve
-                    setFanSpeed(); // Apply the current slider value
+                    // --- manual mode ---
+                    manualControlGroupBox.Enabled = true; // enable the slider panel
+                    DeactivateFanCurve(); // turn off the fan curve
+                    setFanSpeed(); // apply the current slider value
                     selectedMode = "Manual";
                 }
                 else if (checkedButton == fanCurve1RadioButton)
                 {
-                    // --- FAN CURVE 1 ---
-                    manualControlGroupBox.Enabled = false; // Disable slider panel
+                    // --- fan curve 1 ---
+                    manualControlGroupBox.Enabled = false; // disable slider panel
                     Properties.Settings.Default.FanCurveEnabled = true;
                     Properties.Settings.Default.ActiveFanCurve = ActiveFanCurve.FanCurve1.ToString();
                     currentActiveFanCurve = ActiveFanCurve.FanCurve1;
-                    // ApplyFanCurve(); // REMOVED - The main timer will handle this
                     selectedMode = "Curve1";
                 }
                 else if (checkedButton == fanCurve2RadioButton)
                 {
-                    // --- FAN CURVE 2 ---
-                    manualControlGroupBox.Enabled = false; // Disable slider panel
+                    // --- fan curve 2 ---
+                    manualControlGroupBox.Enabled = false; // disable slider panel
                     Properties.Settings.Default.FanCurveEnabled = true;
                     Properties.Settings.Default.ActiveFanCurve = ActiveFanCurve.FanCurve2.ToString();
                     currentActiveFanCurve = ActiveFanCurve.FanCurve2;
-                    // ApplyFanCurve(); // REMOVED - The main timer will handle this
                     selectedMode = "Curve2";
                 }
 
@@ -382,21 +355,19 @@ namespace ZenithFanUtility
 
             fanSpeed = value;
 
-            // Apply the fan curve if enabled
             if (Properties.Settings.Default.FanCurveEnabled)
             {
                 ApplyFanCurve(Properties.Settings.Default.FanCurvePoints1, ActiveFanCurve.FanCurve1);
             }
             else
             {
-                // Set the fan speed directly if the fan curve is not enabled
-                asusControl.SetFanSpeed(value, 0); // Set speed for the first fan
-                asusControl.SetFanSpeed(value, 1); // Set speed for the second fan
-                UpdateFanPercentageLabel(value, ActiveFanCurve.FanCurve1); // Pass the required parameter
+                asusControl.SetFanSpeed(value, 0);
+                asusControl.SetFanSpeed(value, 1);
+                UpdateFanPercentageLabel(value, ActiveFanCurve.FanCurve1);
             }
         }
 
-        // Change the ApplyFanCurve method to have a default parameter value
+        // change the applyfancurve method to have a default parameter value
         private void ApplyFanCurve(System.Collections.Specialized.StringCollection fanCurve, ActiveFanCurve fanCurveType = ActiveFanCurve.FanCurve1)
         {
             if (fanCurve == null || fanCurve.Count == 0)
@@ -408,17 +379,15 @@ namespace ZenithFanUtility
             var currentTemp = asusControl.Thermal_Read_Cpu_Temperature();
             int desiredFanSpeed = CalculateFanSpeedFromCurve((int)currentTemp, fanCurve);
 
-            asusControl.SetFanSpeed(desiredFanSpeed, 0); // Set speed for the first fan
-            asusControl.SetFanSpeed(desiredFanSpeed, 1); // Set speed for the second fan
+            asusControl.SetFanSpeed(desiredFanSpeed, 0);
+            asusControl.SetFanSpeed(desiredFanSpeed, 1);
             UpdateFanPercentageLabel(desiredFanSpeed, fanCurveType);
 
-            // Update the current active fan curve
             currentActiveFanCurve = fanCurveType;
         }
 
         private int CalculateFanSpeedFromCurve(int currentTemp, System.Collections.Specialized.StringCollection fanCurve)
         {
-            // Convert the fan curve points to a list of tuples
             var points = fanCurve.Cast<string>()
                 .Select(entry => entry.Split(','))
                 .Select(parts => (Temperature: int.Parse(parts[1]), FanSpeed: int.Parse(parts[2])))
@@ -430,7 +399,6 @@ namespace ZenithFanUtility
                 throw new InvalidOperationException("Fan curve points are empty or invalid.");
             }
 
-            // Find the two points on the curve that the current temperature falls between
             var lowerPoint = points.LastOrDefault(point => point.Temperature <= currentTemp);
             var upperPoint = points.FirstOrDefault(point => point.Temperature >= currentTemp);
 
@@ -455,28 +423,26 @@ namespace ZenithFanUtility
             string fanCurveStatus = Properties.Settings.Default.FanCurveEnabled ? $" ({fanCurveType} Active)" : "";
             label1.Text = $"Fan Speed: {speed}%{fanCurveStatus}";
 
-            // Update trackBarFanSpeed to match the label's value
+            // update trackbarfanspeed to match the label's value
             if (trackBarFanSpeed.Value != speed)
             {
-                // Temporarily unsubscribe from events to prevent unwanted triggers
+                // temporarily unsubscribe from events to prevent unwanted triggers
                 trackBarFanSpeed.MouseCaptureChanged -= trackBarFanSpeed_MouseCaptureChanged;
                 trackBarFanSpeed.KeyUp -= trackBarFanSpeed_KeyUp;
 
-                // Set the trackbar value
                 trackBarFanSpeed.Value = speed;
 
-                // Re-subscribe to the events
+                // re-subscribe to the events
                 trackBarFanSpeed.MouseCaptureChanged += trackBarFanSpeed_MouseCaptureChanged;
                 trackBarFanSpeed.KeyUp += trackBarFanSpeed_KeyUp;
             }
         }
         private void checkBoxTurnOn_CheckedChanged(object sender, EventArgs e)
         {
-            // Save the checkbox's state to its own dedicated setting
             Properties.Settings.Default.CustomControlEnabled = checkBoxTurnOn.Checked;
             Properties.Settings.Default.Save();
 
-            // The original logic to apply the fan speed still runs
+            // the original logic to apply the fan speed still runs
             setFanSpeed();
         }
 
@@ -507,10 +473,6 @@ namespace ZenithFanUtility
             trackBarFanSpeed_MouseCaptureChanged(sender, e);
         }
 
-        
-
-        
-
         private void MaxFans_Click(object sender, EventArgs e)
         {
             if (checkBoxTurnOn.Checked)
@@ -523,8 +485,6 @@ namespace ZenithFanUtility
 
         private void MinimizeToTray()
         {
-            // The icon is already created, so we just make it visible
-            // and hide the main form.
             if (trayIcon != null)
             {
                 trayIcon.Visible = true;
@@ -545,8 +505,8 @@ namespace ZenithFanUtility
             string runKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
             string appName = "AsusFanControl";
 
-            // MODIFICATION: The path now includes the "-tray" argument for starting minimized.
-            // The quotes are added to handle spaces in the file path.
+            // the path now includes the "-tray" argument for starting minimized
+            // the quotes are added to handle spaces in the file path
             string appPath = $"\"{Application.ExecutablePath}\" -tray";
 
             using (Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(runKey, true))
@@ -565,7 +525,7 @@ namespace ZenithFanUtility
         private void ApplyDarkMode()
         {
             var backgroundColor = Color.FromArgb(28, 28, 28);
-            var controlBackgroundColor = Color.FromArgb(28, 28, 28); // A slightly lighter gray for controls
+            var controlBackgroundColor = Color.FromArgb(28, 28, 28);
             var foregroundColor = Color.White;
             var outlineColor = Color.FromArgb(80, 80, 80);
 
@@ -576,14 +536,13 @@ namespace ZenithFanUtility
             {
                 ApplyDarkModeToControl(control, backgroundColor, controlBackgroundColor, foregroundColor, outlineColor);
             }
-            // Also apply to the Menu Strip
             menuStrip1.Renderer = new DarkMenuRenderer();
         }
 
-        // NEW HELPER METHOD to apply dark mode recursively
+        // new helper method to apply dark mode recursively
         private void ApplyDarkModeToControl(Control control, Color backgroundColor, Color controlBackgroundColor, Color foregroundColor, Color outlineColor)
         {
-            if (control is GroupBox) // Use GroupBox, not DarkGroupBox
+            if (control is GroupBox)
             {
                 control.BackColor = backgroundColor;
                 control.ForeColor = foregroundColor;
@@ -606,23 +565,23 @@ namespace ZenithFanUtility
                 nud.BackColor = controlBackgroundColor;
                 nud.ForeColor = foregroundColor;
             }
-            else if (control is TrackBar trackBar) // Add this for the trackbar
+            else if (control is TrackBar trackBar)
             {
-                trackBar.BackColor = controlBackgroundColor; // Set trackbar background
+                trackBar.BackColor = controlBackgroundColor;
             }
-            else if (control is TextBox textBox) // Add this for text boxes
+            else if (control is TextBox textBox)
             {
                 textBox.BackColor = controlBackgroundColor;
                 textBox.ForeColor = foregroundColor;
-                textBox.BorderStyle = BorderStyle.FixedSingle; // Optional: give it a consistent border
+                textBox.BorderStyle = BorderStyle.FixedSingle; // optional: give it a consistent border
             }
-            // Handle nested controls in GroupBoxes
+
+            // handle nested controls in groupboxes
             foreach (Control childControl in control.Controls)
             {
                 ApplyDarkModeToControl(childControl, backgroundColor, controlBackgroundColor, foregroundColor, outlineColor);
             }
         }
-        
 
         private void ButtonFanCurve_Click(object sender, EventArgs e)
         {
@@ -648,10 +607,10 @@ namespace ZenithFanUtility
             Properties.Settings.Default.Save();
             ShowInfoPopup("Fan Curve 1 has been activated.", "Confirmation");
 
-            // Apply the fan curve with the correct ActiveFanCurve type
+            // apply the fan curve with the correct activefancurve type
             ApplyFanCurve(Properties.Settings.Default.FanCurvePoints1, ActiveFanCurve.FanCurve1);
 
-            // Save the active fan curve
+            // save the active fan curve
             Properties.Settings.Default.ActiveFanCurve = ActiveFanCurve.FanCurve1.ToString();
             Properties.Settings.Default.Save();
         }
@@ -664,17 +623,17 @@ namespace ZenithFanUtility
             DeactivateFanCurve();
             ShowInfoPopup("Fan Curve has been deactivated.", "Confirmation");
 
-            // Set the fan speed directly based on the slider value after deactivating the fan curve
+            // set the fan speed directly based on the slider value after deactivating the fan curve
             var value = trackBarFanSpeed.Value;
-            asusControl.SetFanSpeed(value, 0); // Set speed for the first fan
-            asusControl.SetFanSpeed(value, 1); // Set speed for the second fan
-            UpdateFanPercentageLabel(value, ActiveFanCurve.FanCurve1); // Pass the required parameter
+            asusControl.SetFanSpeed(value, 0);
+            asusControl.SetFanSpeed(value, 1);
+            UpdateFanPercentageLabel(value, ActiveFanCurve.FanCurve1);
         }
         private void DeactivateFanCurve()
         {
             Properties.Settings.Default.FanCurveEnabled = false;
             Properties.Settings.Default.Save();
-            UpdateFanPercentageLabel(fanSpeed, currentActiveFanCurve); // Update label without fan curve
+            UpdateFanPercentageLabel(fanSpeed, currentActiveFanCurve); // update label without fan curve
         }
         private void creditsToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -686,11 +645,10 @@ namespace ZenithFanUtility
 
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
-            // First, save the setting for the next time the app starts
             Properties.Settings.Default.TimerRefreshRate = (int)numericUpDown1.Value;
             Properties.Settings.Default.Save();
 
-            // THIS IS THE FIX: Apply the new interval to the running timer
+            // apply the new interval to the running timer
             if (timer != null)
             {
                 timer.Interval = (int)numericUpDown1.Value;
@@ -738,10 +696,8 @@ namespace ZenithFanUtility
             message += $"Fan Speed from TrackBar: {trackBarFanSpeed.Value}%\n";
             message += $"Desired Fan Speed: {fanSpeed}%\n";
 
-            // Add the line for numericUpDown1 settings in milliseconds only
             message += $"Timer Refresh Rate: {Properties.Settings.Default.TimerRefreshRate} milliseconds\n";
 
-            // Determine which fan curve is active
             if (currentActiveFanCurve == ActiveFanCurve.FanCurve1)
             {
                 message += "Using Fan Curve Points 1.\n";
@@ -753,14 +709,12 @@ namespace ZenithFanUtility
 
             ShowInfoPopup(message, "Debug Information");
         }
-        // Update the ApplyFanCurve call in the LoadSettings method
         private void LoadSettings()
         {
             Properties.Settings.Default.Reload();
 
             ApplyDarkMode();
 
-            // Set Timer Refresh Rate
             if (Properties.Settings.Default.TimerRefreshRate >= numericUpDown1.Minimum &&
                 Properties.Settings.Default.TimerRefreshRate <= numericUpDown1.Maximum)
             {
@@ -782,7 +736,7 @@ namespace ZenithFanUtility
             checkBoxTurnOn.Checked = Properties.Settings.Default.CustomControlEnabled;
             startWithWindowsToolStripMenuItem.Checked = Properties.Settings.Default.boot;
 
-            // --- THIS IS THE NEW BLOCK FOR LOADING THE RADIO BUTTON STATE ---
+            // this is the new block for loading the radio button state
             string lastMode = Properties.Settings.Default["LastSelectedMode"] as string;
             switch (lastMode)
             {
@@ -792,13 +746,13 @@ namespace ZenithFanUtility
                 case "Curve2":
                     fanCurve2RadioButton.Checked = true;
                     break;
-                default: // Default to Manual if nothing is saved
+                default: // default to manual if nothing is saved
                     manualModeRadioButton.Checked = true;
                     break;
             }
-            // --- END OF NEW BLOCK ---
+
             nudHysteresis.Value = Properties.Settings.Default.HysteresisValue;
-            // Load the active fan curve (this is still needed)
+            // load the active fan curve (this is still needed)
             if (Enum.TryParse(Properties.Settings.Default.ActiveFanCurve, out ActiveFanCurve activeFanCurve))
             {
                 currentActiveFanCurve = activeFanCurve;
@@ -810,7 +764,6 @@ namespace ZenithFanUtility
             if (Properties.Settings.Default.FanCurveEnabled)
             {
                 message += "Fan Curve is enabled and actively controlling the fan speed.\n";
-                // Determine which temperature the fan curve is reading from
                 var cpuTemp = asusControl.Thermal_Read_Cpu_Temperature();
                 var gpuTemp = asusControl.Thermal_Read_Highest_Gpu_Temperature();
                 var usedTemp = Math.Max(cpuTemp, gpuTemp);
@@ -838,7 +791,6 @@ namespace ZenithFanUtility
             message += $"Fan Speed from TrackBar: {trackBarFanSpeed.Value}%\n";
             message += $"Desired Fan Speed: {fanSpeed}%\n";
 
-            // Display TimerRefreshRate in milliseconds only
             message += $"Timer Refresh Rate: {Properties.Settings.Default.TimerRefreshRate} milliseconds\n";
             ShowInfoPopup(message, "Debug Information");
         }
@@ -855,10 +807,8 @@ namespace ZenithFanUtility
             }
         }
 
-        // This is our new, single, all-powerful timer method.
         private async void UpdateStats_Tick(object sender, EventArgs e)
         {
-            // 1. If we are already in the middle of an update, skip this tick.
             if (isUpdatingStats)
             {
                 return;
@@ -866,11 +816,10 @@ namespace ZenithFanUtility
 
             try
             {
-                isUpdatingStats = true; // Set the "busy" flag
+                isUpdatingStats = true;
 
-                // 2. Fetch all data asynchronously
                 var cpuTempTask = Task.Run(() => asusControl.Thermal_Read_Cpu_Temperature());
-                var gpuTempTask = Task.Run(() => asusControl.Thermal_Read_Highest_Gpu_Temperature());
+                var gpuTempTask = Task.Run(() => asusControl.Thermal_Read_GpuTS1L_Temperature());
                 var fanSpeedsTask = Task.Run(() => asusControl.GetFanSpeeds());
 
                 await Task.WhenAll(cpuTempTask, gpuTempTask, fanSpeedsTask);
@@ -882,10 +831,13 @@ namespace ZenithFanUtility
                     ? $"CPU: {fanSpeeds[0]} RPM\nGPU: {(fanSpeeds.Count > 1 ? fanSpeeds[1] : 0)} RPM"
                     : "N/A";
 
-                // 3. ONLY update the UI if values have actually changed
+                // create a smarter string for the gpu temp
+                string gpuTempText = (gpuTemp > 0) ? $"{gpuTemp}°C" : "N/A";
+
                 if (cpuTemp != lastCpuTempValue || gpuTemp != lastGpuTempValue)
                 {
-                    labelCPUTemp.Text = $"CPU: {cpuTemp}°C\nGPU: {gpuTemp}°C";
+                    // update the label with our new smart string
+                    labelCPUTemp.Text = $"CPU: {cpuTemp}°C\nGPU: {gpuTempText}";
                     lastCpuTempValue = cpuTemp;
                     lastGpuTempValue = gpuTemp;
                 }
@@ -896,18 +848,16 @@ namespace ZenithFanUtility
                     lastRpmString = currentRpmString;
                 }
 
-                // The tray icon tooltip is lightweight, so we can update it every time.
                 if (trayIcon != null)
                 {
-                    string tooltipText = $"CPU: {cpuTemp}°C | GPU: {gpuTemp}°C";
+                    // also use the smart string in the tooltip
+                    string tooltipText = $"CPU: {cpuTemp}°C | GPU: {gpuTempText}";
                     if (fanSpeeds != null && fanSpeeds.Count > 0) tooltipText += $"\nFans: {fanSpeeds[0]} RPM";
                     trayIcon.Text = tooltipText;
                 }
 
-                // 4. If the fan curve is active, apply it using the data we already have
                 if (Properties.Settings.Default.FanCurveEnabled)
                 {
-                    // Pass the already-fetched temp to avoid another hardware call
                     ApplyFanCurve((int)cpuTemp);
                 }
             }
@@ -917,16 +867,13 @@ namespace ZenithFanUtility
             }
             finally
             {
-                isUpdatingStats = false; // Clear the "busy" flag
+                isUpdatingStats = false;
             }
         }
 
-        // This is the new, smarter ApplyFanCurve that doesn't need parameters.
-        // It also includes the Hysteresis logic.
-        private void ApplyFanCurve(int currentTemp) // Now accepts the current temp
+        private void ApplyFanCurve(int currentTemp)
         {
-            // This method no longer needs to fetch the temperature itself!
-
+            // this method no longer needs to fetch the temperature itself
             System.Collections.Specialized.StringCollection fanCurve = null;
             ActiveFanCurve activeCurveType = currentActiveFanCurve;
 
@@ -973,11 +920,11 @@ namespace ZenithFanUtility
 
         private void button1_Click(object sender, EventArgs e)
         {
-            // Apply the fan curve from FanCurvePoints2 with the correct ActiveFanCurve type
+            // apply the fan curve from fancurvepoints2 with the correct activefancurve type
             ApplyFanCurve(Properties.Settings.Default.FanCurvePoints2, ActiveFanCurve.FanCurve2);
             ShowInfoPopup("Switched to Fan Curve Points 2.", "Confirmation");
 
-            // Save the active fan curve
+            // save the active fan curve
             Properties.Settings.Default.ActiveFanCurve = ActiveFanCurve.FanCurve2.ToString();
             Properties.Settings.Default.Save();
         }

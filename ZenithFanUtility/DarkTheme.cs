@@ -2,8 +2,6 @@
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-
-// --- Part 1: Define the color palette for our dark theme ---
 public class DarkColorTable : ProfessionalColorTable
 {
     private Color backColor = Color.FromArgb(38, 38, 38);
@@ -26,38 +24,31 @@ public class DarkColorTable : ProfessionalColorTable
     public override Color MenuItemSelectedGradientEnd => selectedColor;
 }
 
-// --- Part 2: Create the renderer that uses the dark palette and fixes checkboxes ---
 public class DarkMenuRenderer : ToolStripProfessionalRenderer
 {
     public DarkMenuRenderer() : base(new DarkColorTable()) { }
 
-    // Fix text color
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
     {
         e.TextColor = Color.White;
         base.OnRenderItemText(e);
     }
 
-    // --- THIS IS THE NEW, FINAL VERSION ---
-    // It draws a bigger, sharper, and correctly scaled checkmark.
     protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
     {
-        // We only want to draw if the item is actually checked.
         if (e.Item is ToolStripMenuItem tsmi && tsmi.Checked)
         {
             var g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            // Get the area available for the checkmark and add some padding
             var rect = e.ImageRectangle;
             rect.Inflate(-4, -4); // 4px padding looks clean
 
-            // Define the 3 points for a sharp "V" shape, relative to the padded area
             var p1 = new Point(rect.Left, rect.Top + rect.Height / 2);
             var p2 = new Point(rect.Left + rect.Width / 3, rect.Bottom);
             var p3 = new Point(rect.Right, rect.Top);
 
-            // Draw the checkmark with a 2px thick, rounded pen
+            // draw the checkmark with a 2px thick, rounded pen
             using (var pen = new Pen(Color.WhiteSmoke, 2f))
             {
                 pen.StartCap = LineCap.Round;
