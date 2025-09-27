@@ -64,7 +64,7 @@ If you are unable to roll back the driver, you can force the app to run with SYS
 This project was built to be a modern, stable fan control utility. It would not have been possible without the foundational work of several open-source developers:
 
 * **[Karmel0x](https://github.com/Karmel0x/AsusFanControl):** Created the original proof-of-concept and the core library for hardware interaction.
-* **[Pgian88](https://github.com/pgain88/Asus-Fan):** Provided a foundational update with many new features in a prior version.
+* **[Pgian88](https://github.com/pgain88/AsusFanControlRemastered):** Provided a foundational update with many new features in a prior version.
 * **[Darren80](https://github.com/Darren80/AsusFanControlEnhanced):** Developed the original visual fan curve editor concept.
 * **[BrightenedDay](https://github.com/BrightenedDay/AsusFanControl):** Implemented the initial theming features.
 
