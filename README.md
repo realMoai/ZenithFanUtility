@@ -1,6 +1,10 @@
 # Zenith Fan Utility
 
-<img src="https://github.com/user-attachments/assets/2b680b93-4c25-46db-a384-e90ab6d851ff" alt="Zenith Fan Utility Screenshot" width="45%" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2b680b93-4c25-46db-a384-e90ab6d851ff"
+       alt="Zenith Fan Utility Screenshot"
+       style="width:45%; max-width:800px; min-width:0; height:auto;">
+</p>
 
 A modern, reliable, and feature-rich fan control utility for ASUS laptops, rebuilt from the ground up for stability, performance, and a polished user experience.
 
